@@ -72,6 +72,19 @@ export async function apiDeleteCard(
   await apiFetch(`/api/cards/${cardNum(cardId)}`, { method: "DELETE" }, token);
 }
 
+export async function apiChat(
+  token: string,
+  message: string,
+  history: { role: string; content: string }[]
+): Promise<{ reply: string; board_updated: boolean }> {
+  const res = await apiFetch(
+    "/api/chat",
+    { method: "POST", body: JSON.stringify({ message, history }) },
+    token
+  );
+  return res.json();
+}
+
 export async function apiMoveCard(
   token: string,
   cardId: string,

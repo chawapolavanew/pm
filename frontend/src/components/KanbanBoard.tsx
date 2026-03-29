@@ -23,6 +23,7 @@ import {
   ApiError,
 } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { ChatSidebar } from "@/components/ChatSidebar";
 
 type Props = {
   onLogout?: () => Promise<void>;
@@ -37,8 +38,10 @@ export const KanbanBoard = ({ onLogout }: Props) => {
     if (err instanceof ApiError && err.status === 401) onLogout?.();
   };
 
+  const loadBoard = () => fetchBoard(token).then(setBoard).catch(handle401);
+
   useEffect(() => {
-    fetchBoard(token).then(setBoard).catch(handle401);
+    loadBoard();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,6 +234,8 @@ export const KanbanBoard = ({ onLogout }: Props) => {
           </DragOverlay>
         </DndContext>
       </main>
+
+      <ChatSidebar onBoardUpdated={loadBoard} />
     </div>
   );
 };

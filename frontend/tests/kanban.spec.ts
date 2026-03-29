@@ -94,6 +94,49 @@ test("adds a card to a column", async ({ page }) => {
   await expect(firstColumn.getByText("Playwright card")).toBeVisible();
 });
 
+test("opens and closes the AI chat sidebar", async ({ page }) => {
+  await loginAndGoToBoard(page);
+  const sidebar = page.getByTestId("chat-sidebar");
+  await expect(sidebar).toHaveClass(/translate-x-full/);
+  await page.getByRole("button", { name: /open ai chat/i }).click();
+  await expect(sidebar).toHaveClass(/translate-x-0/);
+  await page.getByRole("button", { name: /close ai chat/i }).first().click();
+  await expect(sidebar).toHaveClass(/translate-x-full/);
+});
+
+test("sends a chat message and receives a reply", async ({ page }) => {
+  await page.route("/api/chat", async (route) => {
+    await route.fulfill({ json: { reply: "I added it!", board_updated: false } });
+  });
+
+  await loginAndGoToBoard(page);
+  await page.getByRole("button", { name: /open ai chat/i }).click();
+  await page.getByPlaceholder(/ask the ai/i).fill("Add a card");
+  await page.getByRole("button", { name: /send message/i }).click();
+  await expect(page.getByText("I added it!")).toBeVisible();
+});
+
+test("refreshes board after AI makes a change", async ({ page }) => {
+  let boardCallCount = 0;
+  await page.route("/api/board", async (route) => {
+    boardCallCount++;
+    await route.fulfill({ json: mockBoard });
+  });
+  await page.route("/api/chat", async (route) => {
+    await route.fulfill({ json: { reply: "Done!", board_updated: true } });
+  });
+
+  await loginAndGoToBoard(page);
+  const countAfterLoad = boardCallCount;
+
+  await page.getByRole("button", { name: /open ai chat/i }).click();
+  await page.getByPlaceholder(/ask the ai/i).fill("Move a card");
+  await page.getByRole("button", { name: /send message/i }).click();
+  await expect(page.getByText("Done!")).toBeVisible();
+
+  expect(boardCallCount).toBeGreaterThan(countAfterLoad);
+});
+
 test("moves a card between columns", async ({ page }) => {
   await loginAndGoToBoard(page);
   const card = page.getByTestId("card-card-1");

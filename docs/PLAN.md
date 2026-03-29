@@ -248,19 +248,19 @@ AI receives full board context + user question and can respond with text and/or 
 Beautiful sidebar UI for AI chat. If the AI updates the board, the UI refreshes automatically.
 
 ### Steps
-- [ ] `ChatSidebar` component
-  - [ ] Toggle open/closed from board header button
-  - [ ] Message list: user messages right-aligned, AI messages left-aligned
-  - [ ] Input bar with submit button (Enter to send)
-  - [ ] Loading indicator while AI is thinking
-  - [ ] Error display on API failure
-- [ ] Wire to `POST /api/chat`
-- [ ] On response: if `board_updated === true`, re-fetch board state from `GET /api/board`
-- [ ] Conversation history maintained in component state (cleared on page refresh is acceptable for MVP)
-- [ ] Styling consistent with existing color scheme
-- [ ] Tests
-  - [ ] Unit: sidebar renders, sends message, shows reply
-  - [ ] E2E: open sidebar, type message, receive reply, verify board updates if AI makes a change
+- [x] `ChatSidebar` component
+  - [x] Toggle open/closed from board header button
+  - [x] Message list: user messages right-aligned, AI messages left-aligned
+  - [x] Input bar with submit button (Enter to send)
+  - [x] Loading indicator while AI is thinking
+  - [x] Error display on API failure
+- [x] Wire to `POST /api/chat`
+- [x] On response: if `board_updated === true`, re-fetch board state from `GET /api/board`
+- [x] Conversation history maintained in component state (cleared on page refresh is acceptable for MVP)
+- [x] Styling consistent with existing color scheme
+- [x] Tests
+  - [x] Unit: sidebar renders, sends message, shows reply
+  - [x] E2E: open sidebar, type message, receive reply, verify board updates if AI makes a change
 
 ### Success Criteria
 - Sidebar looks polished and matches the design language
