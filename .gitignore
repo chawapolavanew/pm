@@ -174,3 +174,9 @@ cython_debug/
 
 .DS_Store
 
+# Next.js static export
+frontend/out/
+
+# SQLite database
+data/
+

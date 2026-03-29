@@ -1,0 +1,42 @@
+{
+  "tables": {
+    "users": {
+      "columns": {
+        "id":            { "type": "INTEGER", "primaryKey": true, "autoIncrement": true },
+        "username":      { "type": "TEXT",    "notNull": true, "unique": true },
+        "password_hash": { "type": "TEXT",    "notNull": true }
+      }
+    },
+    "boards": {
+      "columns": {
+        "id":      { "type": "INTEGER", "primaryKey": true, "autoIncrement": true },
+        "user_id": { "type": "INTEGER", "notNull": true, "foreignKey": "users.id", "onDelete": "CASCADE" },
+        "name":    { "type": "TEXT",    "notNull": true, "default": "My Board" }
+      }
+    },
+    "columns": {
+      "columns": {
+        "id":       { "type": "INTEGER", "primaryKey": true, "autoIncrement": true },
+        "board_id": { "type": "INTEGER", "notNull": true, "foreignKey": "boards.id", "onDelete": "CASCADE" },
+        "title":    { "type": "TEXT",    "notNull": true },
+        "position": { "type": "INTEGER", "notNull": true }
+      }
+    },
+    "cards": {
+      "columns": {
+        "id":        { "type": "INTEGER", "primaryKey": true, "autoIncrement": true },
+        "column_id": { "type": "INTEGER", "notNull": true, "foreignKey": "columns.id", "onDelete": "CASCADE" },
+        "title":     { "type": "TEXT",    "notNull": true },
+        "details":   { "type": "TEXT",    "notNull": true, "default": "" },
+        "position":  { "type": "INTEGER", "notNull": true }
+      }
+    }
+  },
+  "notes": [
+    "All tables use cascading deletes so removing a user removes all their data.",
+    "position columns are zero-indexed integers; ordering is done in application code.",
+    "password_hash stores bcrypt hashes — plain text passwords are never persisted.",
+    "MVP seeds one user (username='user') and one board on first startup.",
+    "Schema is auto-created via CREATE TABLE IF NOT EXISTS on app startup."
+  ]
+}
