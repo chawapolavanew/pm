@@ -30,6 +30,7 @@ backend/
 | PATCH  | /api/cards/{id}         | Yes  | Update card title/details          |
 | DELETE | /api/cards/{id}         | Yes  | Delete card                        |
 | PATCH  | /api/cards/{id}/move    | Yes  | Move card to column + position     |
+| GET    | /api/ai/ping            | Yes  | Test AI connectivity ("2+2")       |
 | GET    | /api/hello              | No   | Health check                       |
 | GET    | /                       | No   | Static file serving (SPA)          |
 
@@ -59,3 +60,4 @@ pytest tests/
 - **fastapi** — web framework
 - **uvicorn[standard]** — ASGI server
 - **bcrypt** — password hashing
+- **openai** — OpenAI SDK used as OpenRouter client (`base_url` overridden)

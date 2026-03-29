@@ -194,11 +194,11 @@ Replace in-memory frontend state with live API calls. Board is now persistent.
 Backend can call OpenRouter. Prove it works with a simple test.
 
 ### Steps
-- [ ] Add `openai` Python package (OpenAI SDK, compatible with OpenRouter)
-- [ ] `OPENROUTER_API_KEY` read from `.env` / environment variable
-- [ ] `backend/ai.py` — thin wrapper around the OpenRouter API using model `openai/gpt-oss-120b:free`
-- [ ] `GET /api/ai/ping` — sends "What is 2+2?" to the AI, returns the response (dev/test endpoint)
-- [ ] Test the ping endpoint manually and via pytest (can be skipped in CI if no key)
+- [x] Add `openai` Python package (OpenAI SDK, compatible with OpenRouter)
+- [x] `OPENROUTER_API_KEY` read from `.env` / environment variable
+- [x] `backend/ai.py` — thin wrapper around the OpenRouter API using model `openai/gpt-oss-120b:free`
+- [x] `GET /api/ai/ping` — sends "What is 2+2?" to the AI, returns the response (dev/test endpoint)
+- [x] Test the ping endpoint manually and via pytest (can be skipped in CI if no key)
 
 ### Success Criteria
 - `GET /api/ai/ping` returns a valid response from the AI
@@ -213,7 +213,7 @@ Backend can call OpenRouter. Prove it works with a simple test.
 AI receives full board context + user question and can respond with text and/or board updates via Structured Outputs.
 
 ### Steps
-- [ ] Define Structured Output schema:
+- [x] Define Structured Output schema:
   ```json
   {
     "reply": "string",
@@ -225,14 +225,14 @@ AI receives full board context + user question and can respond with text and/or 
     }
   }
   ```
-- [ ] `POST /api/chat` endpoint
-  - [ ] Accepts `{ message: string, history: [{role, content}] }`
-  - [ ] Fetches current board state for the authenticated user
-  - [ ] Sends system prompt (board JSON) + conversation history + user message to AI
-  - [ ] Parses Structured Output response
-  - [ ] If `board_update` is non-empty, applies changes to DB
-  - [ ] Returns `{ reply: string, board_updated: boolean }`
-- [ ] Comprehensive backend tests for the chat endpoint (mock AI response)
+- [x] `POST /api/chat` endpoint
+  - [x] Accepts `{ message: string, history: [{role, content}] }`
+  - [x] Fetches current board state for the authenticated user
+  - [x] Sends system prompt (board JSON) + conversation history + user message to AI
+  - [x] Parses Structured Output response
+  - [x] If `board_update` is non-empty, applies changes to DB
+  - [x] Returns `{ reply: string, board_updated: boolean }`
+- [x] Comprehensive backend tests for the chat endpoint (mock AI response)
 
 ### Success Criteria
 - Asking "add a card called 'Deploy to prod' to the Done column" creates that card in the DB

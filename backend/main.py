@@ -269,6 +269,161 @@ def move_card(
 
 
 # ---------------------------------------------------------------------------
+# AI
+# ---------------------------------------------------------------------------
+
+@app.get("/api/ai/ping")
+def ai_ping(username: Annotated[str, Depends(get_current_user)]):
+    from ai import chat
+    reply = chat([{"role": "user", "content": "What is 2+2? Reply with just the number."}])
+    return {"reply": reply}
+
+
+class HistoryMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[HistoryMessage] = []
+
+
+def _get_board_data(username: str) -> dict:
+    """Fetch board as the same dict structure the frontend uses."""
+    with get_db() as db:
+        user_id = get_user_id(db, username)
+        board_id = get_board_id(db, user_id)
+        cols = db.execute(
+            "SELECT id, title FROM columns WHERE board_id = ? ORDER BY position",
+            (board_id,),
+        ).fetchall()
+        all_cards = db.execute(
+            """
+            SELECT cards.id, cards.column_id, cards.title, cards.details
+            FROM cards
+            JOIN columns ON cards.column_id = columns.id
+            WHERE columns.board_id = ?
+            ORDER BY cards.position
+            """,
+            (board_id,),
+        ).fetchall()
+
+    cards_by_col: dict[int, list] = {col["id"]: [] for col in cols}
+    cards_dict: dict[str, dict] = {}
+    for card in all_cards:
+        cid = f"card-{card['id']}"
+        cards_dict[cid] = {"id": cid, "title": card["title"], "details": card["details"]}
+        cards_by_col[card["column_id"]].append(cid)
+
+    return {
+        "columns": [
+            {"id": f"col-{col['id']}", "title": col["title"], "cardIds": cards_by_col[col["id"]]}
+            for col in cols
+        ],
+        "cards": cards_dict,
+        "_col_title_to_id": {col["title"]: col["id"] for col in cols},
+    }
+
+
+def _apply_board_update(update: dict, board: dict, username: str) -> None:
+    """Apply AI board_update operations to the database."""
+    title_to_id: dict[str, int] = board["_col_title_to_id"]
+
+    def card_num(cid: str) -> int:
+        return int(cid.replace("card-", ""))
+
+    with get_db() as db:
+        user_id = get_user_id(db, username)
+        board_id = get_board_id(db, user_id)
+
+        for op in update.get("cards_to_create", []):
+            col_id = title_to_id.get(op.get("column_title", ""))
+            if not col_id:
+                continue
+            max_pos = db.execute(
+                "SELECT COALESCE(MAX(position), -1) FROM cards WHERE column_id = ?", (col_id,)
+            ).fetchone()[0]
+            db.execute(
+                "INSERT INTO cards (column_id, title, details, position) VALUES (?, ?, ?, ?)",
+                (col_id, op.get("title", ""), op.get("details", ""), max_pos + 1),
+            )
+
+        for op in update.get("cards_to_update", []):
+            try:
+                cid = card_num(op["card_id"])
+            except (KeyError, ValueError):
+                continue
+            if "title" in op:
+                db.execute("UPDATE cards SET title = ? WHERE id = ?", (op["title"], cid))
+            if "details" in op:
+                db.execute("UPDATE cards SET details = ? WHERE id = ?", (op["details"], cid))
+
+        for op in update.get("cards_to_delete", []):
+            try:
+                cid = card_num(op["card_id"])
+            except (KeyError, ValueError):
+                continue
+            card = db.execute(
+                "SELECT column_id, position FROM cards WHERE id = ?", (cid,)
+            ).fetchone()
+            if card:
+                db.execute("DELETE FROM cards WHERE id = ?", (cid,))
+                db.execute(
+                    "UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ?",
+                    (card["column_id"], card["position"]),
+                )
+
+        for op in update.get("cards_to_move", []):
+            try:
+                cid = card_num(op["card_id"])
+            except (KeyError, ValueError):
+                continue
+            dst_col_id = title_to_id.get(op.get("column_title", ""))
+            if not dst_col_id:
+                continue
+            card = db.execute(
+                "SELECT column_id, position FROM cards WHERE id = ?", (cid,)
+            ).fetchone()
+            if not card:
+                continue
+            src_col_id = card["column_id"]
+            src_pos = card["position"]
+            max_dst = db.execute(
+                "SELECT COALESCE(MAX(position), -1) FROM cards WHERE column_id = ?", (dst_col_id,)
+            ).fetchone()[0]
+            db.execute(
+                "UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ?",
+                (src_col_id, src_pos),
+            )
+            db.execute(
+                "UPDATE cards SET column_id = ?, position = ? WHERE id = ?",
+                (dst_col_id, max_dst + 1, cid),
+            )
+
+
+@app.post("/api/chat")
+def chat_endpoint(
+    req: ChatRequest,
+    username: Annotated[str, Depends(get_current_user)],
+):
+    from ai import board_chat
+
+    board = _get_board_data(username)
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    result = board_chat(board, history, req.message)
+
+    update = result["board_update"]
+    has_update = any(
+        update.get(k) for k in ("cards_to_create", "cards_to_update", "cards_to_delete", "cards_to_move")
+    )
+    if has_update:
+        _apply_board_update(update, board, username)
+
+    return {"reply": result["reply"], "board_updated": has_update}
+
+
+# ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
 
